@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="jogo.css">
+    <title>Jogos infatis</title>
+</head>
+<body class="theme-amimals">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="feedback" id="flash"></div>
+
+        <nav>
+            <button class="nav-btn nav-animals active" onclick="showGame('animals',  this)">🐾Animais</button>
+            <button class="nav-btn nav-math" onclick="showGame('math', this)">🏎️ Corrida</button>
+            <button class="nav-btn nav-port" onclick="showGame('port', this)">📖 Português</button>
+        </nav>
+
+        <!-- ============ ANIMALS ============ -->
+        <div id="screen-animals" class="screen active">
+            <header><div class="title">🐾 Jogo dos Animais!</div></header>
+        <div class="diff-row">
+            <button class="diff-btn active" onclick="setDiff(this,6)">🐣 Fácil</button>
+            <button class="diff-btn" onclick="setDiff(this,8)">🐸 Médio</button>
+            <button class="diff-btn" onclick="setDiff(this,10)">🦁 Difícil</button>
+        </div>
+
+        <div class="score-bar">
+        <div class="score-pill"><span>⭐</span><span id="a-score">0</span> pts</div>
+        <div class="score-pill"><span>🔄</span><span id="a-moves">0</span> jogadas</div>
+        <div class="score-pill"><span>✅</span><span id="a-pairs">0</span> pares</div>
+        </div>
+        <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+           <button class="btn-restart" onclick="startAnimals()">🔄 Novo Jogo</button>
+        </div>
+
+
+        <!-- ============ RACE MATH ============ -->
+<div id="screen-math" class="screen">
+  <header><div class="title" style="color:#FFD93D;text-shadow:0 4px 0 #FF6B00,0 7px 14px rgba(0,0,0,.4);">🏎️ Corrida Maluca!</div></header>
+  <div class="race-level-row">
+    <button class="rlvl-btn active" onclick="setRaceLevel(this,'easy')">🟢 Fácil</button>
+    <button class="rlvl-btn" onclick="setRaceLevel(this,'medium')">🟡 Médio</button>
+    <button class="rlvl-btn" onclick="setRaceLevel(this,'hard')">🔴 Difícil</button>
+  </div>
+  <div class="race-hud">
+    <div class="race-pill">⭐ <span id="r-score">0</span> pts</div>
+    <div class="race-pill">❤️ <span id="r-lives">3</span></div>
+    <div class="race-pill">🏁 <span id="r-lap">0</span>/10</div>
+    <div class="race-pill">🚀 <span id="r-speed">1</span>x</div>
+  </div>
+  <div class="finish-bar"><div class="finish-fill" id="finish-fill" style="width:0%"></div><span class="finish-flag">🏁</span></div>
+  <div class="race-msg" id="race-msg">Pronto para correr? 🏎️</div>
+  <div class="race-wrap" id="race-wrap">
+    <div class="road" id="road"></div>
+    <div class="grass-l"></div>
+    <div class="grass-r"></div>
+    <div class="player-car" id="player-car">🏎️</div>
+  </div>
+  <div class="answer-zone" id="answer-zone"></div>
+  <button class="btn-restart" style="margin-top:10px" onclick="startRace()">🔄 Nova Corrida</button>
+</div>
+
+<!-- ============ PORTUGUESE ============ -->
+<div id="screen-port" class="screen">
+  <header><div class="title">📖 Brincando com Letras!</div></header>
+  <div class="port-modes">
+    <button class="port-mode-btn active" onclick="setPortMode(this,'letters')">🔤 Soletrar</button>
+    <button class="port-mode-btn" onclick="setPortMode(this,'syllables')">🗣️ Sílabas</button>
+    <button class="port-mode-btn" onclick="setPortMode(this,'match')">🃏 Palavra+Figura</button>
+  </div>
+  <div class="score-bar">
+    <div class="score-pill"><span>⭐</span><span id="p-score">0</span> pts</div>
+    <div class="score-pill"><span>❤️</span><span id="p-lives">3</span> vidas</div>
+    <div class="score-pill"><span>📝</span><span id="p-qnum">0</span>/10</div>
+  </div>
+  <div class="port-progress" id="port-progress"></div>
+  <div class="port-question-box">
+    <span class="port-image" id="port-image">🐶</span>
+    <div class="port-question" id="port-question">Qual é a palavra?</div>
+    <div class="port-sub" id="port-sub"></div>
+  </div>
+  <div id="port-interact"></div>
+  <button class="btn-restart" onclick="startPort()">🔄 Novo Jogo</button>
+</div>
+
+<!-- WIN OVERLAY -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-box">
+    <span class="win-emoji" id="win-emoji">🎉</span>
+    <div class="win-title">Parabéns!</div>
+    <div class="win-sub" id="win-sub"></div>
+    <div class="win-stars" id="win-stars">⭐⭐⭐</div>
+    <button class="btn-restart" onclick="closeWin()">🎮 Jogar de Novo!</button>
+  </div>
+</div>
+
+<script src="jogo.js"></script>
+
+</body>
+
+</html>
