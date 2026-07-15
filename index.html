@@ -15,6 +15,8 @@
         <nav>
             <button class="nav-btn nav-animals active" onclick="showGame('animals',  this)">🐾Animais</button>
             <button class="nav-btn nav-math" onclick="showGame('math', this)">🏎️ Corrida</button>
+            <button class="nav-btn nav-math2" onclick="showGame('math2', this)">🎈 Contas</button>
+            <button class="nav-btn nav-math3" onclick="showGame('math3', this)">🧩 Desafio</button>
             <button class="nav-btn nav-port" onclick="showGame('port', this)">📖 Português</button>
         </nav>
 
@@ -53,6 +55,7 @@
   </div>
   <div class="finish-bar"><div class="finish-fill" id="finish-fill" style="width:0%"></div><span class="finish-flag">🏁</span></div>
   <div class="race-msg" id="race-msg">Pronto para correr? 🏎️</div>
+  <div class="race-question" id="race-q"></div>
   <div class="race-wrap" id="race-wrap">
     <div class="road" id="road"></div>
     <div class="grass-l"></div>
@@ -61,6 +64,48 @@
   </div>
   <div class="answer-zone" id="answer-zone"></div>
   <button class="btn-restart" style="margin-top:10px" onclick="startRace()">🔄 Nova Corrida</button>
+</div>
+
+<!-- ============ MATH BALLOONS ============ -->
+<div id="screen-math2" class="screen">
+  <header><div class="title" style="color:#FFE066;text-shadow:0 4px 0 #FF6B02,0 7px 14px rgba(0,0,0,.4);">🎈 Balões de Contas!</div></header>
+  <div class="math2-level-row">
+    <button class="math2-level-btn active" onclick="setMath2Level(this,'easy')">🟢 Fácil</button>
+    <button class="math2-level-btn" onclick="setMath2Level(this,'medium')">🟡 Médio</button>
+    <button class="math2-level-btn" onclick="setMath2Level(this,'hard')">🔴 Difícil</button>
+  </div>
+  <div class="math2-hud">
+    <div class="race-pill">⭐ <span id="math2-score">0</span> pts</div>
+    <div class="race-pill">❤️ <span id="math2-lives">3</span></div>
+    <div class="race-pill">🔢 <span id="math2-round">0/10</span></div>
+  </div>
+  <div class="math2-question-box">
+    <div class="math2-question" id="math2-question">Resolva a conta antes do balão subir!</div>
+    <div class="math2-message" id="math2-message">Toque no balão certo.</div>
+  </div>
+  <div class="math2-arena" id="math2-arena"></div>
+  <button class="btn-restart" style="margin-top:10px" onclick="startMath2()">🔄 Novo Desafio</button>
+</div>
+
+<!-- ============ MATH CARDS ============ -->
+<div id="screen-math3" class="screen">
+  <header><div class="title" style="color:#FFF8D6;text-shadow:0 4px 0 #7A4DFF,0 7px 14px rgba(0,0,0,.35);">🧩 Desafio das Cartas!</div></header>
+  <div class="math3-level-row">
+    <button class="math3-level-btn active" onclick="setMath3Level(this,'easy')">🟢 Fácil</button>
+    <button class="math3-level-btn" onclick="setMath3Level(this,'medium')">🟡 Médio</button>
+    <button class="math3-level-btn" onclick="setMath3Level(this,'hard')">🔴 Difícil</button>
+  </div>
+  <div class="math3-hud">
+    <div class="race-pill">⭐ <span id="math3-score">0</span> pts</div>
+    <div class="race-pill">❤️ <span id="math3-lives">3</span></div>
+    <div class="race-pill">🎯 <span id="math3-round">0/8</span></div>
+  </div>
+  <div class="math3-question-box">
+    <div class="math3-question" id="math3-question">Qual é o resultado?</div>
+    <div class="math3-message" id="math3-message">Escolha a carta certa.</div>
+  </div>
+  <div class="math3-grid" id="math3-grid"></div>
+  <button class="btn-restart" style="margin-top:10px" onclick="startMath3()">🔄 Novo Desafio</button>
 </div>
 
 <!-- ============ PORTUGUESE ============ -->

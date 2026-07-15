@@ -21,6 +21,9 @@ function flash(type){
   f.className='feedback-flash '+type+' show';
   setTimeout(()=>f.className='feedback-flash',350);
 }
+function setRaceQuestion(text){
+  document.getElementById('race-q').textContent = text || '';
+}
 function showWin(sub,stars,emoji){
   document.getElementById('win-sub').textContent=sub;
   document.getElementById('win-stars').textContent=stars;
@@ -32,6 +35,7 @@ function closeWin(){
   document.getElementById('win-overlay').classList.remove('show');
   if(currentGame==='animals') startAnimals();
   else if(currentGame==='math') startRace();
+  else if(currentGame==='math2') startMath2();
   else startPort();
 }
 
@@ -46,6 +50,8 @@ function showGame(game,btn){
   document.body.className='theme-'+game;
   if(game==='math') raceResume();
   else racePause();
+  if(game==='math2') startMath2();
+  if(game==='math3') startMath3();
 }
 document.querySelectorAll('.cloud').forEach(c=>c.style.left=(Math.random()*80)+'vw');
 
@@ -131,17 +137,205 @@ let playerCarEmoji='🏎️';
 
 // level config
 const LEVEL_CFG={
-  easy:  {maxN:5, ops:['+'],       speed:3.5, interval:4000},
-  medium:{maxN:10,ops:['+','-'],   speed:2.8, interval:3200},
-  hard:  {maxN:15,ops:['+','-','×'],speed:2.2,interval:2600},
+  easy:  {maxN:5, ops:['+'],       speed:5.5, interval:5200},
+  medium:{maxN:10,ops:['+','-'],   speed:4.2, interval:4200},
+  hard:  {maxN:15,ops:['+','-','×'],speed:3.4, interval:3600},
 };
-
+const MATH_POP_CFG={
+  easy:  {maxN:8,  ops:['+'],         time:7000},
+  medium:{maxN:12, ops:['+','-'],     time:8000},
+  hard:  {maxN:15, ops:['+','-','×'], time:9000},
+};
+const MATH_CARD_CFG={
+  easy:  {maxN:8,  ops:['+']},
+  medium:{maxN:12, ops:['+','-']},
+  hard:  {maxN:15, ops:['+','-','×']},
+};
+let math2Score=0, math2Lives=3, math2Round=0, math2Total=10, math2Level='easy', math2Timer=null, math2CurrentAns=null, math2GameOver=false;
+let math3Score=0, math3Lives=3, math3Round=0, math3Total=8, math3Level='easy', math3GameOver=false;
 function setRaceLevel(btn,lvl){
   document.querySelectorAll('.rlvl-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');raceLevel=lvl;startRace();
 }
+function setMath2Level(btn,lvl){
+  document.querySelectorAll('.math2-level-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');math2Level=lvl;startMath2();
+}
+function setMath3Level(btn,lvl){
+  document.querySelectorAll('.math3-level-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');math3Level=lvl;startMath3();
+}
 function racePause(){racePaused=true;}
 function raceResume(){if(!raceOver)racePaused=false;}
+
+function startMath2(){
+  document.getElementById('win-overlay').classList.remove('show');
+  math2Score=0;math2Lives=3;math2Round=0;math2GameOver=false;math2CurrentAns=null;
+  document.getElementById('math2-score').textContent=0;
+  document.getElementById('math2-lives').textContent=3;
+  document.getElementById('math2-round').textContent=`0/${math2Total}`;
+  document.getElementById('math2-message').textContent='Toque no balão com a resposta certa!';
+  document.getElementById('math2-arena').innerHTML='';
+  nextMath2Question();
+}
+
+function startMath3(){
+  document.getElementById('win-overlay').classList.remove('show');
+  math3Score=0;math3Lives=3;math3Round=0;math3GameOver=false;
+  document.getElementById('math3-score').textContent=0;
+  document.getElementById('math3-lives').textContent=3;
+  document.getElementById('math3-round').textContent=`0/${math3Total}`;
+  document.getElementById('math3-message').textContent='Escolha a carta certa.';
+  document.getElementById('math3-grid').innerHTML='';
+  nextMath3Question();
+}
+
+function updateMath2HUD(){
+  document.getElementById('math2-score').textContent=math2Score;
+  document.getElementById('math2-lives').textContent=math2Lives;
+}
+
+function genMath2Question(){
+  const cfg=MATH_POP_CFG[math2Level];
+  const op=cfg.ops[Math.floor(Math.random()*cfg.ops.length)];
+  let a,b,ans,q;
+  if(op==='+'){a=rand(1,cfg.maxN);b=rand(1,cfg.maxN);ans=a+b;q=`${a} + ${b} = ?`;}
+  else if(op==='-'){a=rand(2,cfg.maxN);b=rand(1,a);ans=a-b;q=`${a} - ${b} = ?`;}
+  else {a=rand(2,Math.min(6,cfg.maxN));b=rand(2,Math.min(6,cfg.maxN));ans=a*b;q=`${a} × ${b} = ?`;}
+  const answers=new Set([ans]);
+  while(answers.size<4){
+    let delta=rand(1,5);
+    let wrong=Math.random()>.5?ans+delta:ans-delta;
+    if(wrong<0) wrong=ans+delta;
+    if(wrong!==ans) answers.add(wrong);
+  }
+  return {q,ans,answers:shuffle([...answers])};
+}
+
+function renderMath2Balloons(opts,correct){
+  const arena=document.getElementById('math2-arena');
+  arena.innerHTML='';
+  opts.forEach((opt,idx)=>{
+    const btn=document.createElement('button');
+    btn.className='balloon';
+    btn.textContent=opt;
+    btn.style.left=`${10+idx*22+rand(-4,4)}%`;
+    btn.style.background=opt===correct?
+      'linear-gradient(135deg,#6BCB77,#3da847)':'linear-gradient(135deg,#FF5F84,#FF8A61)';
+    btn.style.animationDuration=`${MATH_POP_CFG[math2Level].time/1000 + 1.6}s`;
+    btn.onclick=()=>pickMath2Answer(btn,opt,correct);
+    arena.appendChild(btn);
+  });
+}
+
+function nextMath2Question(){
+  if(math2Timer) clearTimeout(math2Timer);
+  if(math2Round>=math2Total){
+    math2GameOver=true;
+    showWin(`Você acertou ${math2Score/10} contas!`,math2Score>=80?'⭐⭐⭐':math2Score>=50?'⭐⭐':'⭐','🎉');
+    return;
+  }
+  math2Round++;
+  const qdata=genMath2Question();
+  math2CurrentAns=qdata.ans;
+  document.getElementById('math2-question').textContent=qdata.q;
+  document.getElementById('math2-round').textContent=`${math2Round}/${math2Total}`;
+  renderMath2Balloons(qdata.answers,qdata.ans);
+  math2Timer=setTimeout(()=>{
+    if(math2GameOver) return;
+    flash('err');
+    math2Lives--;
+    updateMath2HUD();
+    if(math2Lives<=0){
+      math2GameOver=true;
+      showWin(`Acabaram as vidas! Pontos: ${math2Score}`,'⭐','😅');
+    } else {
+      nextMath2Question();
+    }
+  }, MATH_POP_CFG[math2Level].time);
+}
+
+function pickMath2Answer(btn,chosen,correct){
+  if(math2GameOver) return;
+  if(math2Timer) clearTimeout(math2Timer);
+  if(chosen===correct){
+    btn.classList.add('correct');
+    math2Score+=10;
+    flash('ok');
+    updateMath2HUD();
+    setTimeout(nextMath2Question,400);
+  } else {
+    btn.classList.add('wrong');
+    flash('err');
+    math2Lives--;
+    updateMath2HUD();
+    if(math2Lives<=0){
+      math2GameOver=true;
+      setTimeout(()=>showWin(`Acabaram as vidas! Pontos: ${math2Score}`,'⭐','😅'),600);
+    } else {
+      setTimeout(nextMath2Question,700);
+    }
+  }
+}
+
+function genMath3Question(){
+  const cfg=MATH_CARD_CFG[math3Level];
+  const op=cfg.ops[Math.floor(Math.random()*cfg.ops.length)];
+  let a,b,ans,q;
+  if(op==='+'){a=rand(1,cfg.maxN);b=rand(1,cfg.maxN);ans=a+b;q=`${a} + ${b} = ?`;}
+  else if(op==='-'){a=rand(2,cfg.maxN);b=rand(1,a);ans=a-b;q=`${a} - ${b} = ?`;}
+  else {a=rand(2,Math.min(6,cfg.maxN));b=rand(2,Math.min(6,cfg.maxN));ans=a*b;q=`${a} × ${b} = ?`;}
+  const answers=new Set([ans]);
+  while(answers.size<6){
+    const delta=rand(1,6);
+    const wrong=Math.random()>.5?ans+delta:ans-delta;
+    if(wrong>0) answers.add(wrong);
+  }
+  return {q,ans,answers:shuffle([...answers]).slice(0,6)};
+}
+
+function nextMath3Question(){
+  if(math3Round>=math3Total){
+    math3GameOver=true;
+    showWin(`Você acertou ${math3Score} pontos!`,math3Score>=50?'⭐⭐⭐':math3Score>=30?'⭐⭐':'⭐','🧩');
+    return;
+  }
+  math3Round++;
+  const qdata=genMath3Question();
+  document.getElementById('math3-question').textContent=qdata.q;
+  document.getElementById('math3-round').textContent=`${math3Round}/${math3Total}`;
+  const grid=document.getElementById('math3-grid');
+  grid.innerHTML='';
+  qdata.answers.forEach(val=>{
+    const btn=document.createElement('button');
+    btn.className='math3-card';
+    btn.textContent=val;
+    btn.onclick=()=>pickMath3Answer(btn,val,qdata.ans);
+    grid.appendChild(btn);
+  });
+}
+
+function pickMath3Answer(btn,chosen,correct){
+  if(math3GameOver) return;
+  if(chosen===correct){
+    btn.classList.add('correct');
+    math3Score+=10;
+    flash('ok');
+    document.getElementById('math3-score').textContent=math3Score;
+    setTimeout(nextMath3Question,500);
+  } else {
+    btn.classList.add('wrong');
+    flash('err');
+    math3Lives--;
+    document.getElementById('math3-lives').textContent=math3Lives;
+    if(math3Lives<=0){
+      math3GameOver=true;
+      setTimeout(()=>showWin(`Acabaram as vidas! Pontos: ${math3Score}`,'⭐','😅'),600);
+    } else {
+      setTimeout(nextMath3Question,700);
+    }
+  }
+}
 
 function startRace(){
   document.getElementById('win-overlay').classList.remove('show');
@@ -151,6 +345,8 @@ function startRace(){
   updateRaceHUD();
   document.getElementById('finish-fill').style.width='0%';
   document.getElementById('race-msg').textContent='Vá! Vá! Vá! 🏎️💨';
+  setRaceQuestion('');
+  document.getElementById('answer-zone').innerHTML='';
 
   // clear old obstacles & trees
   obstacleTimers.forEach(clearTimeout);obstacleTimers=[];
@@ -243,6 +439,7 @@ function spawnObstacle(){
 
   const qdata=genQuestion();
   currentAns=qdata.ans;
+  setRaceQuestion(qdata.q);
 
   // pick random lane for obstacle
   const obsLane=rand(0,2);
@@ -269,6 +466,8 @@ function spawnObstacle(){
   const obsTimeout=setTimeout(()=>{
     if(obsEl.parentNode)obsEl.remove();
     if(currentObs===obsEl)currentObs=null;
+    document.getElementById('answer-zone').innerHTML='';
+    setRaceQuestion('');
     if(!raceOver)scheduleNextObstacle();
   },fallDur);
   obstacleTimers.push(obsTimeout);
@@ -321,6 +520,8 @@ function pickAnswer(btn,chosen,ans){
       currentObs.style.opacity='0';
       setTimeout(()=>{if(currentObs){currentObs.remove();currentObs=null;}},250);
     }
+    document.getElementById('answer-zone').innerHTML='';
+    setRaceQuestion('');
     updateRaceHUD();
     if(raceLap>=raceTotal){
       raceOver=true;
@@ -350,7 +551,7 @@ function pickAnswer(btn,chosen,ans){
       raceOver=true;
       setTimeout(()=>showWin(`Acabaram as vidas! Pontos: ${raceScore}`,raceScore>=70?'⭐⭐':'⭐','💥'),800);
     }else{
-      setTimeout(()=>{answerLocked=false;if(currentObs){currentObs.remove();currentObs=null;}scheduleNextObstacle();},1000);
+      setTimeout(()=>{answerLocked=false;if(currentObs){currentObs.remove();currentObs=null;}document.getElementById('answer-zone').innerHTML='';setRaceQuestion('');scheduleNextObstacle();},1000);
     }
   }
 }
