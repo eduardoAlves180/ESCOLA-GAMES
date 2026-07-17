@@ -24,12 +24,45 @@ function flash(type){
 function setRaceQuestion(text){
   document.getElementById('race-q').textContent = text || '';
 }
+// prettier congrats toast
+function showCongrats(name){
+  try{
+    const prev=document.querySelector('.congrats-toast'); if(prev) prev.remove();
+    const el=document.createElement('div'); el.className='congrats-toast';
+    const avatar = (playerProfile && playerProfile.avatar) ? playerProfile.avatar : '🎉';
+    el.innerHTML = `<div class="congrats-avatar">${avatar}</div><div class="congrats-body"><div class="congrats-title">Parabéns, ${name}!</div><div class="congrats-sub">Você fez um ótimo trabalho 🎉</div></div><div class="congrats-actions"><button class="congrats-btn">OK</button></div>`;
+    document.body.appendChild(el);
+    // show animation
+    setTimeout(()=>el.classList.add('show'),20);
+    // close handlers
+    el.querySelector('.congrats-btn').addEventListener('click', ()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),320); });
+    // auto remove
+    setTimeout(()=>{ if(document.body.contains(el)){ el.classList.remove('show'); setTimeout(()=>el.remove(),320); } },4500);
+    // tiny sound
+    try{const ctx=new (window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator();const g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(880,ctx.currentTime);g.gain.setValueAtTime(0.0001,ctx.currentTime);o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.12,ctx.currentTime+0.02);o.frequency.exponentialRampToValueAtTime(1320,ctx.currentTime+0.18);setTimeout(()=>{g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.25);o.stop(ctx.currentTime+0.26);},270);}catch(e){}
+  }catch(e){console.warn('showCongrats failed',e)}
+}
 function showWin(sub,stars,emoji){
   document.getElementById('win-sub').textContent=sub;
   document.getElementById('win-stars').textContent=stars;
   document.getElementById('win-emoji').textContent=emoji||'🎉';
   document.getElementById('win-overlay').classList.add('show');
   launchConfetti();
+  
+  // reward XP based on stars (e.g. '⭐⭐⭐' -> 3)
+  try{
+    if(typeof addXP === 'function' && stars){
+      const count = (stars.match(/⭐/g)||stars.match(/⭐/g)||[]).length || (stars.match(/⭐|★/g)||[]).length || (stars.length>0?stars.length:0);
+      let gain = 0;
+      if(count>=3) gain = 60; else if(count===2) gain = 35; else if(count===1) gain = 15; else gain = 10;
+      addXP(gain);
+    }
+  }catch(e){console.warn('xp reward failed',e)}
+  // prettier popup de parabéns com o nome da criança
+  try{
+    const name = playerProfile && playerProfile.name ? playerProfile.name.trim() : '';
+    if(name){ setTimeout(()=>{ showCongrats(name); }, 350); }
+  }catch(e){/* ignore */}
 }
 function closeWin(){
   document.getElementById('win-overlay').classList.remove('show');
@@ -37,6 +70,181 @@ function closeWin(){
   else if(currentGame==='math') startRace();
   else if(currentGame==='math2') startMath2();
   else startPort();
+}
+
+// =========== PROFILE (nome / avatar / nível) ===========
+let playerProfile = {name:'', avatar:'👦', level:1};
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem('playerProfile');
+    if(raw){const p=JSON.parse(raw); playerProfile = {...playerProfile, ...p};}
+  }catch(e){console.warn('profile load failed',e)}
+  updateProfileUI();
+}
+function saveProfile(){
+  try{localStorage.setItem('playerProfile', JSON.stringify(playerProfile));}catch(e){console.warn('profile save failed',e)}
+}
+function updateProfileUI(){
+  const avatarEl = document.getElementById('profile-avatar');
+  const nameEl = document.getElementById('profile-name');
+  const lvlEl = document.getElementById('profile-level');
+  const badge = document.getElementById('profile-level-badge');
+  const ageEl = document.getElementById('profile-age');
+  if(avatarEl) avatarEl.textContent = playerProfile.avatar || '👦';
+  if(nameEl) nameEl.value = playerProfile.name || '';
+  if(ageEl) ageEl.textContent = playerProfile.age || '-';
+  if(lvlEl) lvlEl.value = playerProfile.level || 1;
+  if(badge) badge.textContent = playerProfile.level || 1;
+  document.querySelectorAll('.avatar-btn').forEach(b=>b.classList.toggle('active', b.dataset.avatar===playerProfile.avatar));
+}
+
+// delegate avatar clicks in the small profile card (not the modal)
+document.addEventListener('click', (e)=>{
+  const btn = e.target && e.target.closest && e.target.closest('.avatar-btn');
+  if(!btn) return;
+  if(btn.closest && btn.closest('#avatar-grid')){
+    const val = btn.dataset.avatar; if(val){ playerProfile.avatar = val; saveProfile(); updateProfileUI(); }
+  }
+});
+
+// name input
+document.addEventListener('input', (e)=>{
+  if(e.target && e.target.id==='profile-name'){
+    playerProfile.name = e.target.value.slice(0,20);
+    saveProfile();
+  }
+});
+
+// level change
+document.addEventListener('change', (e)=>{
+  if(e.target && e.target.id==='profile-level'){
+    const v = parseInt(e.target.value,10)||1; playerProfile.level = v; saveProfile();
+    const badge = document.getElementById('profile-level-badge'); if(badge) badge.textContent = v;
+  }
+});
+
+// ========== PROFILE SCREEN (login) ==========
+function showProfileScreen(){
+  const modal = document.getElementById('profile-screen'); if(!modal) return;
+  modal.setAttribute('aria-hidden','false');
+  // populate fields
+  const pn = document.getElementById('ps-name'); const pa = document.getElementById('ps-age');
+  if(pn) pn.value = playerProfile.name || '';
+  if(pa) pa.value = playerProfile.age || '';
+  // mark current avatar
+  document.querySelectorAll('#ps-avatar-grid .avatar-btn').forEach(b=>b.classList.toggle('active', b.dataset.avatar===playerProfile.avatar));
+}
+function hideProfileScreen(){const modal=document.getElementById('profile-screen'); if(modal) modal.setAttribute('aria-hidden','true');}
+
+// modal avatar clicks
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.closest && e.target.closest('#ps-avatar-grid')){
+    const btn = e.target.closest('.avatar-btn'); if(!btn) return;
+    document.querySelectorAll('#ps-avatar-grid .avatar-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+});
+
+// open modal from small edit button
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.id==='open-profile-screen'){ showProfileScreen(); }
+});
+
+// save from modal
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.id==='ps-save'){
+    const pn = document.getElementById('ps-name'); const pa = document.getElementById('ps-age');
+    const active = document.querySelector('#ps-avatar-grid .avatar-btn.active');
+    const avatar = active?active.dataset.avatar:playerProfile.avatar||'👦';
+    playerProfile.name = pn?pn.value.trim():playerProfile.name;
+    playerProfile.age = pa?parseInt(pa.value,10)||null:playerProfile.age;
+    playerProfile.avatar = avatar;
+    saveProfile(); updateProfileUI(); initProfileUIState(); hideProfileScreen();
+    // start games after profile setup
+    startAnimals(); startRace(); startPort();
+  }
+});
+
+
+// XP and level mechanics
+playerProfile.xp = playerProfile.xp || 0;
+playerProfile.xpToNext = playerProfile.xpToNext || 100;
+function addXP(amount){
+  playerProfile.xp = (playerProfile.xp||0) + amount;
+  // level up when reach threshold
+  while(playerProfile.xp >= (playerProfile.xpToNext||100)){
+    playerProfile.xp -= (playerProfile.xpToNext||100);
+    playerProfile.level = Math.min(5, (playerProfile.level||1) + 1);
+    // increase next threshold moderately
+    playerProfile.xpToNext = Math.round((playerProfile.xpToNext||100) * 1.25);
+    // level up effects
+    launchConfetti();
+    playLevelSound();
+    const badge = document.getElementById('profile-level-badge'); if(badge) badge.textContent = playerProfile.level;
+    applyProfileToGames();
+  }
+  saveProfile();
+  // update UI
+  const fill = document.getElementById('profile-xp-fill');
+  const txt = document.getElementById('profile-xp-text');
+  const pct = Math.min(100, Math.round((playerProfile.xp / (playerProfile.xpToNext||100))*100));
+  if(fill) fill.style.width = pct + '%';
+  if(txt) txt.textContent = `${playerProfile.xp}/${playerProfile.xpToNext} XP`;
+}
+
+function playLevelSound(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(880, ctx.currentTime);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+    o.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.18);
+    setTimeout(()=>{g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25); o.stop(ctx.currentTime + 0.26);},270);
+  }catch(e){console.warn('sound failed',e)}
+}
+
+// Map profile level to game difficulties and parameters
+function difficultyForLevel(lvl){
+  if(lvl<=1) return 'easy';
+  if(lvl===2) return 'easy';
+  if(lvl===3) return 'medium';
+  if(lvl===4) return 'hard';
+  return 'hard';
+}
+
+function applyProfileToGames(){
+  // Animals: map to pairs
+  const pairsMap = {1:6,2:7,3:8,4:10,5:12};
+  aPairs = pairsMap[playerProfile.level] || 6;
+  // restart animals to apply
+  if(currentGame==='animals') startAnimals();
+
+  // Race: set level buttons
+  const rlevel = difficultyForLevel(playerProfile.level);
+  raceLevel = rlevel; document.querySelectorAll('.rlvl-btn').forEach(b=>b.classList.toggle('active', b.textContent.toLowerCase().includes(rlevel)));
+  // restart race to apply
+  startRace();
+
+  // Math2 & Math3
+  const ml = difficultyForLevel(playerProfile.level);
+  math2Level = ml; document.querySelectorAll('.math2-level-btn').forEach(b=>b.classList.toggle('active', b.textContent.toLowerCase().includes(ml)));
+  math3Level = ml; document.querySelectorAll('.math3-level-btn').forEach(b=>b.classList.toggle('active', b.textContent.toLowerCase().includes(ml)));
+  startMath2(); startMath3();
+}
+
+// on load, ensure xp UI shows
+function initProfileUIState(){
+  playerProfile.xp = playerProfile.xp || 0;
+  playerProfile.xpToNext = playerProfile.xpToNext || 100;
+  updateProfileUI();
+  const fill = document.getElementById('profile-xp-fill');
+  const txt = document.getElementById('profile-xp-text');
+  const pct = Math.min(100, Math.round((playerProfile.xp / (playerProfile.xpToNext||100))*100));
+  if(fill) fill.style.width = pct + '%';
+  if(txt) txt.textContent = `${playerProfile.xp}/${playerProfile.xpToNext} XP`;
 }
 
 // ==================== NAVIGATION ====================
@@ -66,16 +274,26 @@ const ALL_ANIMALS=[
   {e:'🐺',n:'Lobo'},{e:'🦋',n:'Borboleta'},
 ];
 let aCards=[],aFlipped=[],aMatched=0,aMoves=0,aScore=0,aPairs=6,aLock=false;
+let aPreviewTimer = null;
 function setDiff(btn,p){document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');aPairs=p;startAnimals();}
 function startAnimals(){
   document.getElementById('win-overlay').classList.remove('show');
-  aFlipped=[];aMatched=0;aMoves=0;aScore=0;aLock=false;
+  if(aPreviewTimer) clearTimeout(aPreviewTimer);
+  aFlipped=[];aMatched=0;aMoves=0;aScore=0;aLock=true; // lock during preview
   document.getElementById('a-score').textContent=0;
   document.getElementById('a-moves').textContent=0;
   document.getElementById('a-pairs').textContent=0;
   const chosen=shuffle(ALL_ANIMALS).slice(0,aPairs);
   aCards=shuffle([...chosen,...chosen].map((a,i)=>({...a,id:i})));
   renderAnimals();
+  // show all cards briefly to let the child memorize, then hide
+  setTimeout(()=>{
+    document.querySelectorAll('.card').forEach(el=>el.classList.add('flipped'));
+  },50);
+  aPreviewTimer = setTimeout(()=>{
+    document.querySelectorAll('.card').forEach(el=>{ if(!el.classList.contains('matched')) el.classList.remove('flipped'); });
+    aLock=false;
+  },5000);
 }
 function renderAnimals(){
   const grid=document.getElementById('grid');
@@ -709,6 +927,13 @@ function checkPort(btn,chosen,correct){
 }
 
 // ==================== INIT ====================
-startAnimals();
-startRace();
-startPort();
+loadProfile();
+initProfileUIState();
+// if missing name or age, show the profile/login screen first
+if(!playerProfile.name || !playerProfile.age){
+  showProfileScreen();
+} else {
+  startAnimals();
+  startRace();
+  startPort();
+}

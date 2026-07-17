@@ -7,6 +7,85 @@
     <title>Jogos infatis</title>
 </head>
 <body class="theme-amimals">
+  <!-- Perfil da criança: nome, avatar e nível -->
+  <div class="profile-bar">
+    <div class="profile-card">
+      <div class="profile-display">
+        <div class="profile-avatar" id="profile-avatar">👦</div>
+        <div class="profile-info">
+          <input id="profile-name" class="profile-name" maxlength="20" placeholder="Nome da criança" />
+          <div class="level-wrap">Nível: <span id="profile-level-badge" class="level-badge">1</span></div>
+        <div class="age-wrap">Idade: <span id="profile-age">-</span></div>
+        </div>
+        <button id="open-profile-screen" class="edit-profile-small">Editar Perfil</button>
+      </div>
+      <div class="profile-xp">
+        <div class="xp-label">XP</div>
+        <div class="xp-bar"><div class="xp-fill" id="profile-xp-fill" style="width:0%"></div></div>
+        <div class="xp-info"><span id="profile-xp-text">0/100 XP</span></div>
+      </div>
+      <details class="profile-edit" open>
+        <summary>Editar perfil</summary>
+        <div class="profile-controls">
+          <label class="control-label">Escolha avatar</label>
+          <div class="avatar-grid" id="avatar-grid">
+            <button class="avatar-btn" data-avatar="👦">👦</button>
+            <button class="avatar-btn" data-avatar="👧">👧</button>
+            <button class="avatar-btn" data-avatar="🧑">🧑</button>
+            <button class="avatar-btn" data-avatar="🧒">🧒</button>
+            <button class="avatar-btn" data-avatar="🦸">🦸</button>
+            <button class="avatar-btn" data-avatar="🧙">🧙</button>
+            <button class="avatar-btn" data-avatar="🐱">🐱</button>
+            <button class="avatar-btn" data-avatar="🐶">🐶</button>
+            <button class="avatar-btn" data-avatar="🦄">🦄</button>
+            <button class="avatar-btn" data-avatar="🤖">🤖</button>
+          </div>
+          <label class="control-label">Nível</label>
+          <select id="profile-level" class="profile-level">
+            <option value="1">1 - Iniciante</option>
+            <option value="2">2</option>
+            <option value="3">3 - Intermediário</option>
+            <option value="4">4</option>
+            <option value="5">5 - Avançado</option>
+          </select>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Tela de login / seleção de avatar (overlay) -->
+  <div id="profile-screen" class="profile-screen" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="profile-screen-box">
+      <h2>Perfil da Criança</h2>
+      <p>Preencha o nome, idade e escolha um avatar.</p>
+      <div class="form-row">
+        <label>Nome</label>
+        <input id="ps-name" maxlength="20" placeholder="Nome da criança" />
+      </div>
+      <div class="form-row">
+        <label>Idade</label>
+        <input id="ps-age" type="number" min="3" max="18" placeholder="Idade" />
+      </div>
+      <div class="form-row">
+        <label>Avatar</label>
+        <div class="avatar-grid" id="ps-avatar-grid">
+          <button class="avatar-btn" data-avatar="👦">👦</button>
+          <button class="avatar-btn" data-avatar="👧">👧</button>
+          <button class="avatar-btn" data-avatar="🧑">🧑</button>
+          <button class="avatar-btn" data-avatar="🧒">🧒</button>
+          <button class="avatar-btn" data-avatar="🦸">🦸</button>
+          <button class="avatar-btn" data-avatar="🧙">🧙</button>
+          <button class="avatar-btn" data-avatar="🐱">🐱</button>
+          <button class="avatar-btn" data-avatar="🐶">🐶</button>
+          <button class="avatar-btn" data-avatar="🦄">🦄</button>
+          <button class="avatar-btn" data-avatar="🤖">🤖</button>
+        </div>
+      </div>
+      <div class="form-row actions">
+        <button id="ps-save" class="btn-restart">Salvar e Continuar</button>
+      </div>
+    </div>
+  </div>
         <div class="cloud cloud-1"></div>
         <div class="cloud cloud-2"></div>
         <div class="cloud cloud-3"></div>
