@@ -751,62 +751,101 @@ function genQuestion(){
 }
 
 function spawnObstacle(){
-  if(raceOver)return;
-  // clear previous obstacle if still on screen
-  if(currentObs){currentObs.remove();currentObs=null;}
+  if(raceOver) return;
+  // clear previous obstacles if still on screen
+  if(currentObs && Array.isArray(currentObs)){
+    currentObs.forEach(o=>{ if(o && o.parentNode) o.remove(); });
+    currentObs = null;
+  }
 
-  const qdata=genQuestion();
-  currentAns=qdata.ans;
+  const qdata = genQuestion();
+  currentAns = qdata.ans;
   setRaceQuestion(qdata.q);
 
-  // pick random lane for obstacle
-  const obsLane=rand(0,2);
+  // generate two wrong answers (obstacles) and leave one lane safe with the correct answer
+  const wrongs = new Set();
+  while(wrongs.size < 2){
+    let w = qdata.ans + rand(-5,5);
+    if(w <= 0 || w === qdata.ans) w = qdata.ans + rand(1,6);
+    if(w !== qdata.ans) wrongs.add(w);
+  }
+  const wrongArr = shuffle([...wrongs]);
 
-  const obsEl=document.createElement('div');
-  obsEl.className='obstacle';
-  obsEl.style.left=LANES_PCT[obsLane]+'%';
-  obsEl.style.transform='translateX(-50%)';
-  obsEl.style.animationDuration=(LEVEL_CFG[raceLevel].speed/raceSpeed+1.2)+'s';
+  // choose lanes and assign wrong answers to lanes, ensure one lane is correct (safe)
+  const lanes = [0,1,2];
+  const shuffled = shuffle(lanes.slice());
+  const correctLane = shuffled.pop(); // lane without obstacle
+  const obstacleLanes = shuffled; // two lanes with obstacles
 
-  // rock/cone sign
-  const signs=['🪨','🛑','🚧','⛽','🏗️'];
-  const sign=signs[Math.floor(Math.random()*signs.length)];
-  obsEl.innerHTML=`<div class="obs-sign">${sign}</div><div class="obs-block">${qdata.q}</div>`;
+  const created = [];
+  obstacleLanes.forEach((laneIdx, i) => {
+    const val = wrongArr[i] || (qdata.ans + i + 1);
+    const obsEl = document.createElement('div');
+    obsEl.className = 'obstacle';
+    obsEl.dataset.value = val;
+    obsEl.dataset.lane = laneIdx;
+    obsEl.style.left = LANES_PCT[laneIdx] + '%';
+    obsEl.style.transform = 'translateX(-50%)';
+    obsEl.style.animationDuration = (LEVEL_CFG[raceLevel].speed / raceSpeed + 1.2) + 's';
+    obsEl.innerHTML = `<div class="obs-sign">🚧</div><div class="obs-block">${val}</div>`;
+    document.getElementById('race-wrap').appendChild(obsEl);
+    created.push({el: obsEl, lane: laneIdx, value: val});
+  });
 
-  document.getElementById('race-wrap').appendChild(obsEl);
-  currentObs=obsEl;
+  // optionally mark correct lane visually as safe
+  const safeMarker = document.createElement('div');
+  safeMarker.className = 'safe-zone';
+  safeMarker.style.left = LANES_PCT[correctLane] + '%';
+  safeMarker.style.transform = 'translateX(-50%)';
+  safeMarker.innerHTML = `<div class="safe-mark">✅</div><div class="safe-text">${qdata.ans}</div>`;
+  document.getElementById('race-wrap').appendChild(safeMarker);
+  created.push({el: safeMarker, lane: correctLane, value: qdata.ans, safe: true});
 
-  // build answer buttons
-  buildAnswerButtons(qdata.ans);
+  currentObs = created;
 
-  // when obstacle reaches bottom without collision → passed
-  const fallDur=(LEVEL_CFG[raceLevel].speed/raceSpeed+1.2)*1000;
-  const obsTimeout=setTimeout(()=>{
-    if(obsEl.parentNode)obsEl.remove();
-    if(currentObs===obsEl)currentObs=null;
-    document.getElementById('answer-zone').innerHTML='';
-    setRaceQuestion('');
-    if(!raceOver)scheduleNextObstacle();
-  },fallDur);
+  // when obstacles reach bottom, check which lane the car is in
+  const fallDur = (LEVEL_CFG[raceLevel].speed / raceSpeed + 1.2) * 1000;
+  const obsTimeout = setTimeout(()=>{
+    // check collision: if any obstacle exists on the same lane as car, it's a crash
+    const carAtLane = carLane;
+    const hit = created.find(c => !c.safe && Number(c.lane) === carAtLane && c.el.parentNode);
+    if(hit){
+      // crash
+      // remove obstacles
+      created.forEach(c => { if(c.el && c.el.parentNode) c.el.remove(); });
+      currentObs = null;
+      flash('err');
+      raceLives--;
+      document.getElementById('race-msg').textContent = `💥 Errou! ${hit.value}`;
+      updateRaceHUD();
+      // explosion
+      const car = document.getElementById('player-car');
+      const exp = document.createElement('div'); exp.className = 'explosion'; exp.textContent = '💥';
+      exp.style.left = car.style.left; exp.style.bottom = '28px'; exp.style.transform = 'translateX(-50%)';
+      document.getElementById('race-wrap').appendChild(exp);
+      setTimeout(()=>exp.remove(),700);
+      if(raceLives <= 0){ raceOver = true; setTimeout(()=>showWin(`Acabaram as vidas! Pontos: ${raceScore}`, raceScore>=70?'⭐⭐':'⭐','💥'),800); }
+      else setTimeout(()=>{ if(!raceOver) scheduleNextObstacle(); }, 900);
+    } else {
+      // successful: car is in safe lane
+      created.forEach(c => { if(c.el && c.el.parentNode) c.el.remove(); });
+      currentObs = null;
+      raceScore += 10 + (raceLevel==='hard'?5:raceLevel==='medium'?2:0);
+      raceLap++;
+      raceSpeed = Math.min(3, 1 + (raceLap * 0.18));
+      document.getElementById('finish-fill').style.width = (raceLap / raceTotal * 100) + '%';
+      document.getElementById('race-msg').textContent = raceLevel==='hard' ? '🔥 Incrível!' : '✅ Boa! Continue assim!';
+      updateRaceHUD();
+      if(raceLap >= raceTotal){ raceOver = true; setTimeout(()=>showWin(`Você cruzou a linha de chegada!\n${raceScore} pontos 🏁`,'⭐⭐⭐','🏆'),600); }
+      else setTimeout(()=>{ if(!raceOver) scheduleNextObstacle(); }, 600);
+    }
+  }, fallDur);
   obstacleTimers.push(obsTimeout);
 }
 
 function buildAnswerButtons(ans){
-  const zone=document.getElementById('answer-zone');
-  zone.innerHTML='';
-  answerLocked=false;
-
-  // wrong answers
-  const wrongs=new Set();
-  while(wrongs.size<3){let w=ans+rand(-5,5);if(w<0)w=ans+rand(1,6);if(w!==ans)wrongs.add(w);}
-  const opts=shuffle([ans,...wrongs]);
-
-  opts.forEach(opt=>{
-    const btn=document.createElement('button');
-    btn.className='ans-btn';btn.textContent=opt;
-    btn.onclick=()=>pickAnswer(btn,opt,ans);
-    zone.appendChild(btn);
-  });
+  // answer buttons are no longer used in lane-avoidance mode
+  const zone = document.getElementById('answer-zone'); if(zone) zone.innerHTML = '';
 }
 
 function moveCar(lane){
