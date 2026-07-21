@@ -99,6 +99,7 @@
             <button class="nav-btn nav-math2" onclick="showGame('math2', this)">🎈 Contas</button>
             <button class="nav-btn nav-math3" onclick="showGame('math3', this)">🧩 Desafio</button>
             <button class="nav-btn nav-port" onclick="showGame('port', this)">📖 Português</button>
+            <button class="nav-btn nav-port2" onclick="showGame('port2', this)">🪄 Português Mágico</button>
         </nav>
 
         <!-- ============ ANIMALS ============ -->
@@ -145,6 +146,28 @@
   </div>
   <div class="answer-zone" id="answer-zone"></div>
   <button class="btn-restart" style="margin-top:10px" onclick="startRace()">🔄 Nova Corrida</button>
+</div>
+
+<!-- ============ PORTUGUÊS MÁGICO ============ -->
+<div id="screen-port2" class="screen">
+  <header><div class="title" style="color:#FFF4D6;text-shadow:0 4px 0 #FF8C42,0 7px 14px rgba(0,0,0,.35);">🪄 Português Mágico!</div></header>
+  <div class="port2-level-row">
+    <button class="port2-level-btn active" onclick="setPort2Level(this,'letters')">🔤 Letras</button>
+    <button class="port2-level-btn" onclick="setPort2Level(this,'syllables')">🔡 Sílabas</button>
+    <button class="port2-level-btn" onclick="setPort2Level(this,'words')">📚 Palavras</button>
+  </div>
+  <div class="port2-hud">
+    <div class="race-pill">⭐ <span id="port2-score">0</span></div>
+    <div class="race-pill">❤️ <span id="port2-lives">3</span></div>
+    <div class="race-pill">🔢 <span id="port2-round">0/8</span></div>
+  </div>
+  <div class="port2-question-box">
+    <div class="port2-image" id="port2-image">🐶</div>
+    <div class="port2-question" id="port2-question">Qual é a palavra?</div>
+    <div class="port2-message" id="port2-message">Toque na resposta certa!</div>
+  </div>
+  <div class="port2-grid" id="port2-grid"></div>
+  <button class="btn-restart" style="margin-top:10px" onclick="startPort2()">🔄 Novo Jogo</button>
 </div>
 
 <!-- ============ MATH BALLOONS ============ -->

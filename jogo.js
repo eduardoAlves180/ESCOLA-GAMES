@@ -379,6 +379,98 @@ const MATH_CARD_CFG={
 };
 let math2Score=0, math2Lives=3, math2Round=0, math2Total=10, math2Level='easy', math2Timer=null, math2CurrentAns=null, math2GameOver=false;
 let math3Score=0, math3Lives=3, math3Round=0, math3Total=8, math3Level='easy', math3GameOver=false;
+
+// ==================== PORTUGUÊS MÁGICO ====================
+const PORT2_QUESTIONS = [
+  {img:'🐶', word:'cachorro', syllables:['ca','chor','ro']},
+  {img:'🐱', word:'gato', syllables:['ga','to']},
+  {img:'🍎', word:'maçã', syllables:['ma','çã']},
+  {img:'🚗', word:'carro', syllables:['car','ro']},
+  {img:'🐟', word:'peixe', syllables:['pei','xe']},
+  {img:'🌞', word:'sol', syllables:['sol']},
+  {img:'🍌', word:'banana', syllables:['ba','na','na']},
+  {img:'🍫', word:'chocolate', syllables:['cho','co','la','te']}
+];
+
+let port2Score=0, port2Lives=3, port2Round=0, port2Total=8, port2Level='words', port2GameOver=false;
+
+function setPort2Level(btn, lvl){
+  document.querySelectorAll('.port2-level-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); port2Level = lvl; startPort2();
+}
+
+function startPort2(){
+  port2Score=0; port2Lives=3; port2Round=0; port2GameOver=false;
+  document.getElementById('port2-score').textContent=0;
+  document.getElementById('port2-lives').textContent=3;
+  document.getElementById('port2-round').textContent=`0/${port2Total}`;
+  document.getElementById('port2-message').textContent='Toque na resposta certa!';
+  document.getElementById('port2-grid').innerHTML='';
+  nextPort2Question();
+}
+
+function updatePort2HUD(){
+  document.getElementById('port2-score').textContent=port2Score;
+  document.getElementById('port2-lives').textContent=port2Lives;
+  document.getElementById('port2-round').textContent=`${port2Round}/${port2Total}`;
+}
+
+function nextPort2Question(){
+  if(port2GameOver) return;
+  port2Round++;
+  if(port2Round>port2Total){ port2GameOver=true; showWin('Mandou bem no Português!', '⭐⭐⭐','🎉'); return; }
+  updatePort2HUD();
+  // pick random base question
+  const q = PORT2_QUESTIONS[Math.floor(Math.random()*PORT2_QUESTIONS.length)];
+  document.getElementById('port2-image').textContent = q.img;
+  let prompt = '';
+  let correct = '';
+  if(port2Level==='letters'){
+    prompt = `Qual é a primeira letra de ${q.word}?`;
+    correct = q.word[0];
+    // generate options letters
+    const letters = new Set([correct]);
+    while(letters.size<4){ letters.add(String.fromCharCode(97+Math.floor(Math.random()*26))); }
+    renderPort2Options(Array.from(letters).sort(()=>Math.random()-0.5), correct);
+  } else if(port2Level==='syllables'){
+    prompt = `Toque na sílaba que inicia ${q.word}`;
+    correct = q.syllables[0];
+    const opts = new Set([correct]);
+    while(opts.size<4){ opts.add(q.syllables[Math.floor(Math.random()*q.syllables.length)] || ('la'+Math.floor(Math.random()*9))); }
+    renderPort2Options(Array.from(opts).sort(()=>Math.random()-0.5), correct);
+  } else {
+    prompt = `Qual é a palavra representada?`;
+    correct = q.word;
+    const opts = new Set([correct]);
+    while(opts.size<4){
+      const rnd = PORT2_QUESTIONS[Math.floor(Math.random()*PORT2_QUESTIONS.length)].word;
+      opts.add(rnd);
+    }
+    renderPort2Options(Array.from(opts).sort(()=>Math.random()-0.5), correct);
+  }
+  document.getElementById('port2-question').textContent = prompt;
+}
+
+function renderPort2Options(options, correct){
+  const grid = document.getElementById('port2-grid'); grid.innerHTML = '';
+  options.forEach(opt=>{
+    const btn = document.createElement('button'); btn.className='port2-card'; btn.textContent = opt;
+    btn.onclick = ()=> pickPort2Answer(btn,opt,correct);
+    grid.appendChild(btn);
+  });
+}
+
+function pickPort2Answer(btn,opt,correct){
+  if(port2GameOver) return;
+  if(opt===correct){
+    btn.classList.add('correct'); port2Score += 10; updatePort2HUD(); launchConfetti();
+    setTimeout(()=>{ nextPort2Question(); }, 800);
+  } else {
+    btn.classList.add('wrong'); port2Lives--; updatePort2HUD();
+    if(port2Lives<=0){ port2GameOver=true; document.getElementById('port2-message').textContent='Acabaram as vidas! Tente novamente.'; showWin('Tente outra vez!','⭐','😅'); }
+    else setTimeout(()=>{ nextPort2Question(); }, 900);
+  }
+}
 function setRaceLevel(btn,lvl){
   document.querySelectorAll('.rlvl-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');raceLevel=lvl;startRace();
