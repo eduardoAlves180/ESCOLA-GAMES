@@ -235,6 +235,14 @@ function applyProfileToGames(){
   startMath2(); startMath3();
 }
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log('Service Worker registrado com sucesso:', reg.scope))
+      .catch(err => console.warn('Falha ao registrar Service Worker:', err));
+  });
+}
+
 // on load, ensure xp UI shows
 function initProfileUIState(){
   playerProfile.xp = playerProfile.xp || 0;

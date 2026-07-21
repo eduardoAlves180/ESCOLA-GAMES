@@ -1,0 +1,10 @@
+{
+  "name": "Escola Games",
+  "short_name": "EscolaGames",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a2940",
+  "theme_color": "#1a2940",
+  "description": "Jogo educativo para web e celular."
+}
